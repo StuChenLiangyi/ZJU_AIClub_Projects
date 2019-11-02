@@ -1,3 +1,4 @@
+#coding=utf-8
 import numpy as np
 import pandas as pd
 import gc
@@ -103,7 +104,8 @@ def eliminate_different_data():
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), i+1, NFOLD))
             train_X, valid_X = df[predictors].values[train_index], df[predictors].values[test_index]
             train_y, valid_y = df[label].values[train_index], df[label].values[test_index]
-
+            train_X=train_X.as_matrix()
+            valid_X=valid_X.as_matrix()
             dtrain = lgb.Dataset(train_X, label=train_y,
                                  feature_name=list(predictors)
                                  )
@@ -162,7 +164,7 @@ def eliminate_different_data():
         print(df_av_train[(df_av_train.preds>=0.9) & (df_av_train.preds<= 0.99)].preds.describe())
 
         # selected_id = list(df_av_train[df_av_train.preds <= 0.93].id)
-        selected_id = list(df_av_train.head(80000).id)#服了，直接选最接近的8w条
+        selected_id = list(df_av_train.head(90000).id)#服了，直接选最接近的8w条
         selected_id += list(label_1_df.id)
         train_selected = b_feature_engineering.train[b_feature_engineering.train.id.isin(
             selected_id)]
