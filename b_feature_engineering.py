@@ -12,7 +12,7 @@ global data, train, test, labels, label_0_df, label_1_df
 string_column = ['dist', 'bankCard', 'residentAddr']
 data = train = test = category_column = None
 labels = pd.read_csv(
-    '../train_target.csv')
+    './data/train_target.csv')
 label_0_df = labels[labels.target == 0]
 label_1_df = labels[labels.target == 1]
 

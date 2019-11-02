@@ -9,9 +9,9 @@ import pandas as pd
 global train_data
 global test_data
 test_data = pd.read_csv(
-    '../test_raw.csv')
+    './data/test_raw.csv')
 train_data = pd.read_csv(
-    '../train_raw.csv')
+    './data/train_raw.csv')
 
 
 def get_preprocessed_data():
