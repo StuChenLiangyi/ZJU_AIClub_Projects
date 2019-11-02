@@ -14,6 +14,7 @@ from d_xgb import get_trained_xgb, get_model_metrics
 from c_data_sample import eliminate_different_data
 from e_feature_combination import get_mul_features, get_add_features,apply_combine_features
 import gc
+import numpy
 
 def main():
     gc.collect() 
