@@ -131,7 +131,7 @@ def apply_combine_features():
         print("全部训练")
         # clf = get_trained_xgb(x_train, scale_pos_weight)
         c_data_sample.train_selected.reset_index(
-            drop=True, inplace=True)  
+            drop=True, inplace=True)
         clf = get_trained_xgb(c_data_sample.train_selected, 80)
         # joblib.dump(clf,'./results/clf_1.model')
         weight_kv = clf.get_booster().get_score()
@@ -148,11 +148,12 @@ def apply_combine_features():
         # print(list(weight_kv.keys())[:30])
         # joblib.dump(clf,'./results/feature_rank.kv')
         print("特征排序结束")
-        y_predprob = clf.predict_proba(b_feature_engineering.test.drop(['id'], axis=1))[:, 1]
-        df=pd.DataFrame()
-        df['id']=b_feature_engineering.test.id
-        df['target']=y_predprob
-        df.to_csv('./results/submission_2.csv',index=0,header=True)
+        y_predprob = clf.predict_proba(
+            b_feature_engineering.test.drop(['id'], axis=1))[:, 1]
+        df = pd.DataFrame()
+        df['id'] = b_feature_engineering.test.id
+        df['target'] = y_predprob
+        df.to_csv('./results/submission_2.csv', index=0, header=True)
         # del x_train
         # gc.collect()
     else:
@@ -166,7 +167,5 @@ def apply_combine_features():
         #     df.to_csv('./results/submission_1.csv',index=0,header=True)
 
 
-
 def select_features():
     clf_1 = joblib.load('./results/clf_1.model')
-    

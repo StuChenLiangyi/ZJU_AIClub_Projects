@@ -15,13 +15,13 @@ train_data = pd.read_csv(
 
 
 def get_preprocessed_data():
-    # for col in train_data.columns:
-    #     if train_data[col].isnull().any():
-    #         print(col)
+    for col in train_data.columns:
+        if train_data[col].isnull().any():
+            print(col)
 
-    # for col in test_data.columns:
-    #     if test_data[col].isnull().any():
-    #         print(col)
+    for col in test_data.columns:
+        if test_data[col].isnull().any():
+            print(col)
     if(os.path.exists('./results/test_data.csv')):
         print("数据预处理完毕")
     else:

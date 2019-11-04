@@ -9,20 +9,20 @@ import gc
 from a_preprocessing import train_data, test_data
 
 global data, train, test, labels, label_0_df, label_1_df
-string_column = ['dist', 'bankCard', 'residentAddr']
+
 data = train = test = category_column = None
 labels = pd.read_csv(
     './data/train_target.csv')
 label_0_df = labels[labels.target == 0]
 label_1_df = labels[labels.target == 1]
 
-def make_features():  # 制造新特征
+def make_features(using_raw_features=False):  # 制造新特征
     global train_data, test_data, data, category_column
     if(os.path.exists('./results/test_data.csv')):
         test_data = pd.read_csv('./results/test_data.csv')
         train_data = pd.read_csv('./results/train_data.csv')
         print("检测到数据已完成生成新特征")
-    else:
+    else: 
         print("正在生成新特征")
         print(train_data.shape)
         # 统计信息缺失数量,得到信息缺失度特征
@@ -192,22 +192,22 @@ def make_features():  # 制造新特征
             train_1_df.residentAddr == train_1_df.dist)
         
     #发现证件日期会使训练集、测试集产生差异，去除。
-#         # 有效期发现均可整/60/60/24/30，转为月数
-#         train_data['certValidBegin'] = train_data['certValidBegin'].apply(
-#             lambda x: round(x/60/60/24/30, 0))
-#         train_data['certValidStop'] = train_data['certValidStop'].apply(
-#             lambda x: round(x/60/60/24/30, 0))
+        # 有效期发现均可整/60/60/24/30，转为月数
+        train_data['certValidBegin'] = train_data['certValidBegin'].apply(
+            lambda x: round(x/60/60/24/30, 0))
+        train_data['certValidStop'] = train_data['certValidStop'].apply(
+            lambda x: round(x/60/60/24/30, 0))
 
-#         test_data['certValidBegin'] = test_data['certValidBegin'].apply(
-#             lambda x: round(x/60/60/24/30, 0))
-#         test_data['certValidStop'] = test_data['certValidStop'].apply(
-#             lambda x: round(x/60/60/24/30, 0))
+        test_data['certValidBegin'] = test_data['certValidBegin'].apply(
+            lambda x: round(x/60/60/24/30, 0))
+        test_data['certValidStop'] = test_data['certValidStop'].apply(
+            lambda x: round(x/60/60/24/30, 0))
 
-#         # 新增证件有效期间隔月数
-#         train_data['certValidMonths'] = train_data['certValidStop'] - \
-#             train_data['certValidBegin']
-#         test_data['certValidMonths'] = test_data['certValidStop'] - \
-#             train_data['certValidBegin']
+        # 新增证件有效期间隔月数
+        train_data['certValidMonths'] = train_data['certValidStop'] - \
+            train_data['certValidBegin']
+        test_data['certValidMonths'] = test_data['certValidStop'] - \
+            train_data['certValidBegin']
 
 #         # 新增证件有效期间隔年数,作为类别
 #         train_data['certValidYears'] = train_data['certValidMonths'].apply(
@@ -215,16 +215,30 @@ def make_features():  # 制造新特征
 #         test_data['certValidYears'] = test_data['certValidMonths'].apply(
 #             lambda x: round(x/12, 0))
 
-#         drop_list = ['certId','certValidBegin','certValidStop',
-#                      'certValidMonths']
-        drop_list = ['certId','certValidBegin','certValidStop']
-
+        if(using_raw_features):
+            drop_list = ['certId',
+                     'certValidMonths','is_InValidStop',
+                     'missing_columns',
+                     'disobey_num',
+                     'disobey_rate',
+                     'dist_disobey_rate',
+                     'card_disobey_num',
+                     'card_disobey_rate',
+                     'is_same_addr',
+                     'addr_disobey_rate',
+                     'is_same_prov']
+        else:
+            drop_list = ['certId']
+        
         train_data = train_data.drop(drop_list, axis=1)
         test_data = test_data.drop(drop_list, axis=1)
 
         train_data.to_csv('./results/train_data.csv', index=0)
         test_data.to_csv('./results/test_data.csv', index=0)
         print("完成特征生成")
+        
+
+           
 
 
 def one_hot_data():
@@ -240,50 +254,46 @@ def one_hot_data():
 
     else:
         print("正在进行独热编码")
-        category_column = []  # 类别全集
-        number_column = ['age','missing_columns', 'disobey_num', 'disobey_rate',
-                         'card_disobey_num', 'card_disobey_rate', 'lmt', 
-                         'addr_disobey_rate', 'dist_disobey_rate']
-
-        for col in train_data.columns:
-            if col not in number_column:
-                n = list(train_data[col].unique())
-                m = list(test_data[col].unique())
-                if(len(set(m+n)) < 100):
-                    category_column.append(col)
-                else:
-                    number_column.append(col)
+#         category_column = ['bankCard','ethnic','residentAddr','dist','job']  # 类别全集，其余全部当做数值型
+        category_column = ['bankCard']
+        number_column = ['age', 'lmt','ethnic','residentAddr','dist','job']
+#         number_column =['age', 'lmt']
+#         for col in train_data.columns:
+#             if col not in number_column:
+#                 n = list(train_data[col].unique())
+#                 m = list(test_data[col].unique())
+#                 if(len(set(m+n)) < 100):
+#                     category_column.append(col)
+#                 else:
+#                     number_column.append(col)
 
         # category_column.remove('certValidBegin')
         # category_column.remove('certValidStop')
         # 将年龄\基础评级\个数\月数\率作为数值型
 
-        # 数值型数据缺失用众数填充,非类别型将缺失看为一种类型
-        for col in train_data.columns:
-            if col not in (category_column+string_column):
-                fd = nltk.FreqDist(train_data[col])
-                train_data[col] = train_data[col].replace(-999, fd.max())
-        #         print(col,'数值，众数填充')
-
-        for col in test_data.columns:
-            if col not in (category_column+string_column):
-                fd = nltk.FreqDist(test_data[col])
-                test_data[col] = test_data[col].replace(-999, fd.max())
-
         data = pd.concat([train_data, test_data], ignore_index=True)
         for col in category_column:
             data[col] = data[col].astype('category')
-        for col in string_column:
-            train_data[col] = train_data[col].astype(str)
-#         #对所有数值型正则
-#         cols = data.select_dtypes(include=['float64', 'int64']).columns
-#         print("正则")
-#         print(cols)
+        for col in number_column:
+            data[col] = data[col].astype('float64') 
+        
+        # 数值型数据缺失用众数填充,非类别型将缺失看为一种类型
+        for col in data.columns:
+            if col not in (category_column):
+                fd = nltk.FreqDist(data[col])
+                data[col] = data[col].replace(-999, fd.max())
+        #         print(col,'数值，众数填充')
+
+#         #对所有数值型正态
+#         cols = data.select_dtypes(exclude=['category']).columns
+#         print("正态")
+# #         print(cols)
 #         for col in cols:
 #             if col != 'id':
 #                 data[col]=np.log1p(data[col])
         #独热编码
-        cols = data.select_dtypes(exclude=['float64', 'int64']).columns
+        cols = data.select_dtypes(include=['category']).columns
+        print(cols)
         data = pd.get_dummies(data, columns=cols)
 
         train = data[data.id < 132030]
@@ -291,4 +301,4 @@ def one_hot_data():
 
         train.to_csv('./results/train.csv', index=0)
         test.to_csv('./results/test.csv', index=0)
-        print("独热编码完成")
+        print("独热编码完成,训练集维度为",train.shape)
