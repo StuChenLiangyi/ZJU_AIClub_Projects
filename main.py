@@ -27,12 +27,12 @@ def start(using_raw_features=True, nums=1000, scale_pos_weight=130, neighbor_num
     a_preprocessing.get_preprocessed_data()  # 预处理
     b_feature_engineering.make_features(
         using_raw_features=using_raw_features)  # 新建特征
-    print("使用原始特征：{0},使用模型：{1},是否独热编码:{2},是否采用近邻点:{3},是否采用人工生成样本:{4}".format(
-        using_raw_features, 'ctb', 'no', 'no', 'no'))
-    ctb = get_trained_ctb(b_feature_engineering.train_data,
-                          b_feature_engineering.labels.target, scale_pos_weight)  # catboost结果
-    output(ctb,b_feature_engineering.test_data,
-           './results/submission_ctb_0.csv')
+    # print("使用原始特征：{0},使用模型：{1},是否独热编码:{2},是否采用近邻点:{3},是否采用人工生成样本:{4}".format(
+    #     using_raw_features, 'ctb', 'no', 'no', 'no'))
+    # ctb = get_trained_ctb(b_feature_engineering.train_data,
+    #                       b_feature_engineering.labels.target, scale_pos_weight)  # catboost结果
+    # output(ctb,b_feature_engineering.test_data,
+    #        './results/submission_ctb_0.csv')
     b_feature_engineering.one_hot_data()
 
     make_new_sample(b_feature_engineering.train,

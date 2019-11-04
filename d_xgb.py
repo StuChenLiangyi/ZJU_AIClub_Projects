@@ -7,7 +7,7 @@ from datetime import datetime
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, accuracy_score
 import b_feature_engineering
 from b_feature_engineering import labels, label_0_df, label_1_df
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold,KFold
 import gc
 import c_data_sample
 
@@ -17,17 +17,17 @@ def get_trained_xgb(x_train, scale_pos_weight):
     print("开始训练模型")
 
     print(datetime.now().strftime('%Y-%m-%d %H:%M'))
-
-    # Get folds for k-fold CV
-    NFOLD = 3
-    sfolds = StratifiedKFold(n_splits=NFOLD, random_state=0, shuffle=True)
-    # folds = KFold(n_splits=NFOLD, shuffle=True, random_state=0)
-    # fold = folds.split(df)
     x_train['target'] = b_feature_engineering.labels.target
+    # Get folds for k-fold CV
+    NFOLD = 5
+#     sfolds = StratifiedKFold(n_splits=NFOLD, random_state=0, shuffle=True)
+    folds = KFold(n_splits=NFOLD, shuffle=True, random_state=0)
+    fold = folds.split(x_train)
+
 #     x_train=x_train.head(1000).copy()
     # sfolds = KFold(n_splits=NFOLD, shuffle=True, random_state=0)
-    sfolds.get_n_splits(x_train, x_train["target"])
-    fold = sfolds.split(x_train, x_train["target"])
+#     sfolds.get_n_splits(x_train, x_train["target"])
+#     fold = sfolds.split(x_train, x_train["target"])
 
     label = 'target'
     predictors = list(x_train.columns.difference(
@@ -39,12 +39,18 @@ def get_trained_xgb(x_train, scale_pos_weight):
         #         train_y, valid_y = x_train[label].values[train_index], x_train[label].values[test_index]
         train_X, valid_X = x_train[predictors].loc[train_index], x_train[predictors].loc[test_index]
         train_y, valid_y = x_train[label].values[train_index], x_train[label].values[test_index]
-        clf = xgb.XGBClassifier(max_depth=8, n_estimators=200,
-                                scale_pos_weight=scale_pos_weight/8,
+        clf = xgb.XGBClassifier(max_depth=6, n_estimators=50,
+                                scale_pos_weight=scale_pos_weight/10,
                                 eval_metric='auc',
                                 objective='binary:logistic',
-                                # colsample_bytree=0.8,
-                                # subsample=0.8,
+                                eta=1,
+                                colsample_bytree=0.5,
+                                gamma=0,
+                                reg_lambda=1,
+                                reg_alpha=1,
+                   
+                                subsample=0.8,
+                                min_child_weight=10,
                                 nthread=32,
                                 learning_rate=0.12
                                 )
@@ -59,23 +65,24 @@ def get_trained_xgb(x_train, scale_pos_weight):
         print(datetime.now().strftime('%Y-%m-%d %H:%M'))
         y_pred = clf.predict(valid_X)
         # y_pred = clf.predict(x_train.drop(['id'], axis=1))
-        y_predprob = clf.predict_proba(valid_X)[:, 1]
+        y_predprob = clf.predict_proba(valid_X,ntree_limit=clf.best_iteration)[:, 1]
 
         print("训练集自测Accuracy : %.4g" % accuracy_score(
             list(valid_y), y_pred))  # Accuracy : 0.9852
         auc = clf.best_score
-        evals_results = clf.evals_result()
+        # evals_results = clf.evals_result()
 #         print(evals_results)
 
         print("AUC Score (Train): %f" % auc)
 
-    print("模型训练完成")
-    if auc > max_auc:
-        max_auc = auc
-        print("auc>>>>>>", auc)
-        clf_best = clf
+        
+        if auc > max_auc:
+            max_auc = auc
+            print("max auc>>>>>>", auc)
+            clf_best = clf
 
     x_train = x_train.drop(['target'], axis=1)
+    print("模型训练完成,返回分数最高模型，auc:",clf_best.base_score)
     return clf_best
 
 

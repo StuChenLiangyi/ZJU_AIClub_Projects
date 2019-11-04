@@ -84,7 +84,7 @@ def eliminate_different_data(neighbor_nums=130000):
     }
 
     # Get folds for k-fold CV
-    NFOLD = 10
+    NFOLD = 3
     sfolds = StratifiedKFold(n_splits=NFOLD, random_state=0, shuffle=True)
     # folds = KFold(n_splits=NFOLD, shuffle=True, random_state=0)
     # fold = folds.split(df)
@@ -200,7 +200,7 @@ def make_new_sample(x_train, y_train, nums=1000):
             print(col)
     print("------------------正在生成新样本-----------------------------")
     # Apply regular SMOTE
-#     kind = ['regular', 'borderline1'] #两种样本生成方法
+#     kind = ['regular', 'borderline1','svm'] #3种样本生成方法
     kind = ['regular']
     sm = [SMOTE(kind=k, ratio={1: nums}) for k in kind]
     X_resampled = []
@@ -226,7 +226,7 @@ def make_new_sample(x_train, y_train, nums=1000):
         plot_resampling(ax_res[i], X_resampled[i], y_resampled[i],
                         'SMOTE {}'.format(kind[i]))
     f
-
+    print(f)
     new = pd.DataFrame(X_resampled[0])  # 取regular方法产生的样本
     columns = x_train.columns.difference(
         ['id'])

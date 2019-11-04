@@ -5,7 +5,7 @@ __pycache__/
 #data file
 data/
 results/
-
+catboost_info/
 # C extensions
 *.so
 
