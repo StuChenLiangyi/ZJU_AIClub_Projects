@@ -64,7 +64,7 @@ def eliminate_different_data(neighbor_nums=130000):
             'certValidMonths', 'is_InValidStop',
             'missing_columns',
             'is_same_addr',
-            'is_same_prov']))
+            'is_same_prov','age_bin','lmt_bin','setupHour_bin','dist_bin']))
 
     # Get label column name
     label = 'label'
@@ -84,7 +84,7 @@ def eliminate_different_data(neighbor_nums=130000):
     }
 
     # Get folds for k-fold CV
-    NFOLD = 3
+    NFOLD = 2
     sfolds = StratifiedKFold(n_splits=NFOLD, random_state=0, shuffle=True)
     # folds = KFold(n_splits=NFOLD, shuffle=True, random_state=0)
     # fold = folds.split(df)

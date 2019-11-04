@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import datetime
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, accuracy_score
 import b_feature_engineering
-from b_feature_engineering import labels, label_0_df, label_1_df
+
 from sklearn.model_selection import StratifiedKFold,KFold
 import gc
 import c_data_sample
@@ -55,7 +55,7 @@ def get_trained_xgb(x_train, scale_pos_weight):
                                 learning_rate=0.12
                                 )
 
-        clf.fit(train_X, train_y, early_stopping_rounds=50,
+        clf.fit(train_X, train_y, early_stopping_rounds=100,
                                  eval_metric='auc', 
                 eval_set=[(valid_X, valid_y)],
                 verbose=50)
@@ -63,9 +63,9 @@ def get_trained_xgb(x_train, scale_pos_weight):
         kv = clf.get_booster().get_score()
         print(list(kv.keys())[:30])
         print(datetime.now().strftime('%Y-%m-%d %H:%M'))
-        y_pred = clf.predict(valid_X)
+        y_pred = clf.predict(valid_X,ntree_limit=clf.best_iteration)
         # y_pred = clf.predict(x_train.drop(['id'], axis=1))
-        y_predprob = clf.predict_proba(valid_X,ntree_limit=clf.best_iteration)[:, 1]
+#         y_predprob = clf.predict_proba(valid_X,ntree_limit=clf.best_iteration)[:, 1]
 
         print("训练集自测Accuracy : %.4g" % accuracy_score(
             list(valid_y), y_pred))  # Accuracy : 0.9852
@@ -82,7 +82,7 @@ def get_trained_xgb(x_train, scale_pos_weight):
             clf_best = clf
 
     x_train = x_train.drop(['target'], axis=1)
-    print("模型训练完成,返回分数最高模型，auc:",clf_best.base_score)
+    print("模型训练完成,返回分数最高模型，auc:",clf_best.best_score)
     return clf_best
 
 
@@ -100,8 +100,8 @@ def get_model_metrics(clf, x_train, rate_0=1, rate_1=1):
         list(x_train.id))]
 
     # X_test=c_data_sample.train
-    test_1 = X_test[X_test.id.isin(list(label_1_df.id))]
-    test_0 = X_test[X_test.id.isin(list(label_0_df.id))]
+    test_1 = X_test[X_test.id.isin(list(b_feature_engineering.label_1_df.id))]
+    test_0 = X_test[X_test.id.isin(list(b_feature_engineering.label_0_df.id))]
 
     X_test = pd.concat([test_0.sample(frac=rate_0),
                         test_1.sample(frac=rate_1)], ignore_index=True)
@@ -111,7 +111,7 @@ def get_model_metrics(clf, x_train, rate_0=1, rate_1=1):
     print(y_pred[:30])
     y_predprob = clf.predict_proba(X_test_temp)[:, 1]
     print(y_predprob[:30])
-    y_test = pd.merge(X_test, labels, on='id').target
+    y_test = pd.merge(X_test, b_feature_engineering.labels, on='id').target
     print(list(y_test)[:30])
     print(dict(nltk.FreqDist(list(y_test))))
     print("Accuracy : %.4g" % accuracy_score(

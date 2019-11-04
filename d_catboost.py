@@ -13,13 +13,13 @@ def get_trained_ctb(x_train, labels, scale_pos_weight=130):
     # Get folds for k-fold CV
     NFOLD = 5
 #     sfolds = StratifiedKFold(n_splits=NFOLD, random_state=0, shuffle=True)
-    folds = KFold(n_splits=NFOLD, shuffle=True, random_state=0)
-    fold = folds.split(x_train)
+#     folds = KFold(n_splits=NFOLD, shuffle=True, random_state=0)
+#     fold = folds.split(x_train)
     
 #     x_train=x_train.head(1000).copy()
-    # sfolds = KFold(n_splits=NFOLD, shuffle=True, random_state=0)
-#     sfolds.get_n_splits(x_train, x_train["target"])
-#     fold = sfolds.split(x_train, x_train["target"])
+    sfolds = KFold(n_splits=NFOLD, shuffle=True, random_state=0)
+    sfolds.get_n_splits(x_train, x_train["target"])
+    fold = sfolds.split(x_train, x_train["target"])
 
     label = 'target'
     predictors = list(x_train.columns.difference(
