@@ -15,5 +15,6 @@ def get_trained_ctb(x_train, labels, scale_pos_weight=130):
                                    custom_metric='AUC',
                                    eval_metric='AUC', scale_pos_weight=scale_pos_weight)
     model.fit(X_train, y_train, early_stopping_rounds=50,
-              eval_set=(X_validation, y_validation), plot=True)
+              eval_set=(X_validation, y_validation), verbose_eval=50,
+              plot=True)
     return model

@@ -49,8 +49,10 @@ def get_trained_xgb(x_train, scale_pos_weight):
                                 learning_rate=0.12
                                 )
 
-        clf.fit(train_X, train_y, early_stopping_rounds=50, eval_metric='auc', eval_set=[(valid_X, valid_y)],
-                verbose=True)
+        clf.fit(train_X, train_y, early_stopping_rounds=50,
+                                 eval_metric='auc', 
+                eval_set=[(valid_X, valid_y)],
+                verbose=50)
 #         clf.fit(train_X, train_y)
         kv = clf.get_booster().get_score()
         print(list(kv.keys())[:30])
@@ -63,7 +65,7 @@ def get_trained_xgb(x_train, scale_pos_weight):
             list(valid_y), y_pred))  # Accuracy : 0.9852
         auc = clf.best_score
         evals_results = clf.evals_result()
-        print(evals_results)
+#         print(evals_results)
 
         print("AUC Score (Train): %f" % auc)
 

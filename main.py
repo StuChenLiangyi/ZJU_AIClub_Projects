@@ -20,7 +20,7 @@ from e_feature_combination import get_mul_features, get_add_features, apply_comb
 import gc
 import b_feature_engineering
 import a_preprocessing
-
+from f_output import output
 
 def start(using_raw_features=True, nums=1000, scale_pos_weight=130, neighbor_nums=130000):
     gc.collect()
@@ -31,7 +31,8 @@ def start(using_raw_features=True, nums=1000, scale_pos_weight=130, neighbor_num
         using_raw_features, 'ctb', 'no', 'no', 'no'))
     ctb = get_trained_ctb(b_feature_engineering.train_data,
                           b_feature_engineering.labels.target, scale_pos_weight)  # catboost结果
-
+    output(ctb,b_feature_engineering.test_data,
+           './results/submission_ctb_0.csv')
     b_feature_engineering.one_hot_data()
 
     make_new_sample(b_feature_engineering.train,
@@ -47,11 +48,9 @@ def start(using_raw_features=True, nums=1000, scale_pos_weight=130, neighbor_num
                       b_feature_engineering.labels, on='id').target
 
     print(c_data_sample.train_selected.shape, len(ytrain))
-    print(c_data_sample.train_selected.head(),
-          nltk.FreqDist(list(ytrain)).plot(5))
     ctb = get_trained_ctb(c_data_sample.train_selected,
                           ytrain.values, scale_pos_weight)  # catboost结果
-
+    output(ctb,b_feature_engineering.test,'./results/submission_ctb_1.csv')
     # return
     if(os.path.exists('./results/clf_0.model')):
         clf_0 = joblib.load('./results/clf_0.model')
@@ -84,5 +83,5 @@ def start(using_raw_features=True, nums=1000, scale_pos_weight=130, neighbor_num
     apply_combine_features()
 
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    start()
