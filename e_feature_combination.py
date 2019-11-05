@@ -10,6 +10,7 @@ from b_feature_engineering import labels
 
 
 def get_mul_features(top_features):
+    print("===============正在进行特征乘法组合尝试========")
     # 得到top7依次组合下的top15*7新乘法特征,每次均采用不同的样本
     if(os.path.exists('./results/mul_features_top.kv')):
         mul_features_top = joblib.load('./results/mul_features_top.kv')
@@ -17,15 +18,26 @@ def get_mul_features(top_features):
         mul_features_top = {}
     for x in top_features:
         if x not in list(mul_features_top.keys()):
-            x_train, scale_pos_weight = c_data_sample.get_sampled_data(c_data_sample.train_selected,
-                                                                       0.6, 0.9)
+            # x_train, scale_pos_weight = c_data_sample.get_sampled_data(c_data_sample.train_selected,
+            try:
+                c_data_sample.train_selected = c_data_sample.train_selected.drop(['target'], axis=1)
+            except:
+                print("drop train_selected.target")
+                pass                                                        #    0.7, 0.9)
+            x_train = c_data_sample.train_selected.copy()
+            scale_pos_weight = 4
+            print(x_train.head(1), b_feature_engineering.labels.head(1))
+            ytrain = pd.merge(x_train,
+                              b_feature_engineering.labels, on='id').target
+            # print(ytrain.head())
             for col in x_train.columns:
                 if col not in top_features and col != 'id':
                     x_train[col] = x_train[x] * x_train[col]
                     x_train.rename(
                         columns={col: (x+'_mul_'+col)}, inplace=True)
             x_train = x_train.drop(top_features, axis=1)
-            clf = get_trained_xgb(x_train, scale_pos_weight)
+
+            clf = get_trained_xgb(x_train, ytrain.values, scale_pos_weight)
             weight_kv = clf.get_booster().get_score()
             mul_features_top[x] = list(weight_kv.keys())[:15]
             del x_train
@@ -36,15 +48,18 @@ def get_mul_features(top_features):
     # top内部组合
     if ('top_mul_internal') not in list(mul_features_top.keys()):
         print("mul 内部组合")
-        x_train, scale_pos_weight = c_data_sample.get_sampled_data(c_data_sample.train_selected,
-                                                                   0.6, 0.9)
+
+        x_train = c_data_sample.train_selected.copy()
+        scale_pos_weight = 4
         df = pd.DataFrame()
         df['id'] = x_train.id
+        ytrain = pd.merge(df,
+                          b_feature_engineering.labels, on='id').target
         # print("特征维度",len(list(combinations(top_features,2))))
         for (x, y) in list(combinations(top_features, 2)):
             df[x+'_mul_'+y] = x_train[x] * x_train[y]
         print(df.shape)
-        clf = get_trained_xgb(df, scale_pos_weight)
+        clf = get_trained_xgb(df, ytrain.values, scale_pos_weight)
         weight_kv = clf.get_booster().get_score()
         mul_features_top['top_mul_internal'] = list(weight_kv.keys())[:15]
         del x_train
@@ -58,21 +73,24 @@ def get_mul_features(top_features):
 
 def get_add_features(top_features):
     # 得到top7依次组合下的top15*7新加法特征,每次均采用不同的样本
+    print("===============正在进行特征加法组合尝试========")
     if(os.path.exists('./results/add_features_top.kv')):
         add_features_top = joblib.load('./results/add_features_top.kv')
     else:
         add_features_top = {}
     for x in top_features:
         if x not in list(add_features_top.keys()):
-            x_train, scale_pos_weight = c_data_sample.get_sampled_data(c_data_sample.train_selected,
-                                                                       0.6, 0.9)
+            x_train = c_data_sample.train_selected.copy()
+            scale_pos_weight = 4
+            ytrain = pd.merge(x_train,
+                              b_feature_engineering.labels, on='id').target
             for col in x_train.columns:
                 if col not in top_features and col != 'id':
                     x_train[col] = x_train[x] + x_train[col]
                     x_train.rename(
                         columns={col: (x+'_add_'+col)}, inplace=True)
             x_train = x_train.drop(top_features, axis=1)
-            clf = get_trained_xgb(x_train, scale_pos_weight)
+            clf = get_trained_xgb(x_train, ytrain.values, scale_pos_weight)
             weight_kv = clf.get_booster().get_score()
             add_features_top[x] = list(weight_kv.keys())[:15]
             del x_train
@@ -83,16 +101,17 @@ def get_add_features(top_features):
     # top内部组合
     if ('top_add_internal') not in list(add_features_top.keys()):
         print("add 内部组合")
-        x_train, scale_pos_weight = c_data_sample.get_sampled_data(c_data_sample.train_selected,
-                                                                   0.6, 0.9)
+        x_train = c_data_sample.train_selected.copy()
+        scale_pos_weight = 4
         df = pd.DataFrame()
         df['id'] = x_train.id
         # print("特征维度",len(list(combinations(top_features,2))))
-
+        ytrain = pd.merge(df,
+                          b_feature_engineering.labels, on='id').target
         for (x, y) in list(combinations(top_features, 2)):
             df[x+'_add_'+y] = x_train[x] + x_train[y]
         print(df.shape)
-        clf = get_trained_xgb(df, scale_pos_weight)
+        clf = get_trained_xgb(df, ytrain.values, scale_pos_weight)
         weight_kv = clf.get_booster().get_score()
         add_features_top['top_add_internal'] = list(weight_kv.keys())[:15]
         del x_train
@@ -130,9 +149,12 @@ def apply_combine_features():
         # x_train, scale_pos_weight = c_data_sample.get_sampled_data(c_data_sample.train_selected,0.95, 0.9)
         print("全部训练")
         # clf = get_trained_xgb(x_train, scale_pos_weight)
-        c_data_sample.train_selected.reset_index(
-            drop=True, inplace=True)
-        clf = get_trained_xgb(c_data_sample.train_selected, 80)
+        x_train = c_data_sample.train_selected.copy()
+        scale_pos_weight = 4
+        ytrain = pd.merge(c_data_sample.train_selected,
+                          b_feature_engineering.labels, on='id').target
+        clf = get_trained_xgb(c_data_sample.train_selected,
+                              ytrain.values, scale_pos_weight)
         # joblib.dump(clf,'./results/clf_1.model')
         weight_kv = clf.get_booster().get_score()
         # get_model_metrics(clf,x_train)

@@ -42,11 +42,13 @@ def get_preprocessed_data():
         test_data['is_InValidStop'] = test_data.certValidStop.apply(
             lambda x: str(x).startswith('2'))
 
-        # 将异常值变为中位数
-        median = train_data['certValidStop'].median()
+        # 将异常值变为中位数、众数
+        median = train_data['certValidStop'].mode()
 
         train_data.certValidStop = train_data.certValidStop.replace(
             256000000000, median)
+        
+        median = test_data['certValidStop'].mode()
         test_data.certValidStop = test_data.certValidStop.replace(
             256000000000, median)
         print("数据预处理完成")
